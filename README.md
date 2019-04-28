@@ -1,2 +1,2 @@
 # challenger-cubesat
-A cubesat model that can be used in the Challenger Education Centers
+A cubesat model that can be used in the Challenger Learning Centers
