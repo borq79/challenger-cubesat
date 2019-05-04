@@ -9,7 +9,7 @@
 CubeSatWiFi::CubeSatWiFi() {
 }
 
-bool CubeSatWiFi::enableAP(CubeSatConfig &config, bool apEnabled) {
+bool CubeSatWiFi::enableAP(CubeSatConfig &config) {
   this->debugger = CubeSatDebug::getCubeSatDebugger();
   this->debugger->logln(DEBUG_LEVEL_INFO, "Current Status of WiFi Connection: " + getWifiStatus(WiFi.status()));
 

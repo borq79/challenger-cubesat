@@ -5,28 +5,39 @@
 // ====================================================================================================================
 // ====================================================================================================================
 
-#ifndef _CUBESAT_WIFI_H_
-#define _CUBESAT_WIFI_H_
+#ifndef _CUBESAT_OLED_DISPLAY_H_
+#define _CUBESAT_OLED_DISPLAY_H_
 
 #include "CubeSatCommon.h"
-#include "CubeSatDebug.h"
 #include "CubeSatConfig.h"
+#include "CubeSatDisplayI.h"
+#include "CubeSatDebug.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_SSD1306.h"
 
-#define MIN_PASSWORD_LENGTH         11
 
-class CubeSatWiFi {
+
+#if (SSD1306_LCDHEIGHT != 64)
+#error("Height incorrect, please fix Adafruit_SSD1306.h!");
+#endif
+
+class CubeSatSSD1306Display : public CubeSatDisplayI {
 
 private:
-  String apName;
-  String apPassword;
-  CubeSatDebug *debugger;
+  String            cubeSatName;
+  CubeSatDebug     *debugger;
+  Adafruit_SSD1306 *display;
+
+  void initDisplay();
+
 
 public:
-  CubeSatWiFi();
-  bool enableAP(CubeSatConfig &config);
-  String getWifiStatus(wl_status_t status);
-  void setAPName(String apName);
-  void setAPPassword(String apPassword);
+  CubeSatSSD1306Display();
+  void init(CubeSatConfig &config);
+  void showInternalSystemStatus(CubeSatData &cubeSatData);
+  void showInitialState();
+  void showLookingForSignal();
+  void showAcceptFirmwareState();
 };
 
 #endif

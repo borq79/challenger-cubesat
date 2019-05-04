@@ -5,20 +5,21 @@
 // ====================================================================================================================
 // ====================================================================================================================
 
-#ifndef _CUBESATSTATION_COMMON_H_
-#define _CUBESATSTATION_COMMON_H_
+#ifndef _CUBESAT_DISPLAY_I_H_
+#define _CUBESAT_DISPLAY_I_H_
 
-#include <Arduino.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <ESP8266WiFi.h>
-#include <FS.h>
-#include <SparkFunBME280.h>
-#include "PCF8574.h"
+#include "CubeSatCommon.h"
+#include "CubeSatConfig.h"
+#include "CubeSatData.h"
 
-#define COMM_BAUD_RATE                115200
-#define BME_ADDRESS                   0x76
-#define PCF8574_ADDRESS               0x20
-#define ADAFRUIT_DISPLAY_ADDRESS      0x3C
+
+class CubeSatDisplayI {
+  public:
+    virtual void init(CubeSatConfig &config) = 0;
+    virtual void showInitialState() = 0;
+    virtual void showLookingForSignal() = 0;
+    virtual void showAcceptFirmwareState() = 0;
+    virtual void showInternalSystemStatus(CubeSatData &cubesatData) = 0;
+};
 
 #endif
