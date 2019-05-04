@@ -4,19 +4,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // ====================================================================================================================
 // ====================================================================================================================
-#include <Arduino.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <PCF8574.h>
-#include <ESP8266WiFi.h>
-#include <FS.h>
-#include <SimpleTimer.h>
-#include <SparkFunBME280.h>
-#include "Adafruit_GFX.h"
-#include "Adafruit_SSD1306.h"
-#include "WeatherStationCommon.h"
-#include "WeatherStationWiFi.h"
-#include "WeatherDebug.h"
+#include "CubeSatCommon.h"
+#include "CubeSatWiFi.h"
+#include "CubeSatDebug.h"
 
 #define KNOB_DIAL A0
 #define KNOB_READ_DELAY 10
@@ -32,7 +22,7 @@
 
 Adafruit_SSD1306 *display;
 
-struct WeatherData {
+struct CubeSatData {
   unsigned long lastRead;
   float tempF;
   float humidity;
@@ -44,10 +34,10 @@ struct WeatherData {
 int16_t           lastKnobValue   = 0;
 const byte PcfButtonLedPin = 0;
 BME280                   bme280;
-WeatherData              dataSample;
-WeatherConfig            config;
-WeatherStationWiFi       wsWifi;
- WeatherDebug             *debugger;
+CubeSatData              dataSample;
+CubeSatConfig            config;
+CubeSatWiFi       wsWifi;
+ CubeSatDebug             *debugger;
 #define PRESSURE_CONVERSION      0.000295299830714 /* merc: 0.000295299830714 / psi: 0.000145037738*/
 
 uint16_t interruptsFired = 0;
@@ -90,8 +80,8 @@ void setup() {
   delay(3000); // Allow for the USB to connect
   initDisplay();
 
-  WeatherDebug::init();
-  debugger = WeatherDebug::getWeatherDebugger();
+  CubeSatDebug::init();
+  debugger = CubeSatDebug::getCubeSatDebugger();
 
   debugger->logln(DEBUG_LEVEL_INFO, "=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~");
   debugger->logln(DEBUG_LEVEL_INFO, "                                CubeSat Startup ");
@@ -102,7 +92,7 @@ void setup() {
   config.loadConfigurationFile();
   debugger->setDebugLevel(config.getDebugLevel());
 
-  wsWifi.connect(config, true);
+  wsWifi.enableAP(config, true);
   server.begin();
 // pinMode(D7, INPUT);
 // pinMode(D6, INPUT);
@@ -119,7 +109,7 @@ pcf8574.pinMode(P4, OUTPUT);
 pcf8574.begin();
 initializeSensors();
 
-  // WeatherDebug::init();
+  // CubeSatDebug::init();
   // weatherStation.begin();
   // timer.setInterval(SENSOR_SAMPLE_RATE, timerEvent);
 }
@@ -232,7 +222,7 @@ void readSensors() {
   dataSample.switchState = switchState;
 
 
-  displayWeather(dataSample);
+  displayCubeSat(dataSample);
   // dataSample.brightness = 1024 - this->getLightIntensity();
 
   Serial.print("Sensor Values\nT: "); Serial.println(String(dataSample.tempF, 2));
@@ -252,13 +242,13 @@ boolean didTheKnobGetTurned() {
     return wasAChange;
 }
 
-void displayWeather(WeatherData &weatherData) {
+void displayCubeSat(CubeSatData &weatherData) {
   display->clearDisplay();
 
   display->setTextSize(1);
   display->setTextColor(WHITE);
   display->setCursor(0,0);
-  display->println(config.getOwnerName());
+  display->println(config.getCubeSatName());
 
   display->setCursor(0, 25);
   display->print("Temp       : "); display->println(weatherData.tempF);

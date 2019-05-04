@@ -5,8 +5,8 @@
 // ====================================================================================================================
 // ====================================================================================================================
 
-#ifndef _WEATHERSTATION_COMMON_H_
-#define _WEATHERSTATION_COMMON_H_
+#ifndef _CUBESATSTATION_COMMON_H_
+#define _CUBESATSTATION_COMMON_H_
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -14,6 +14,9 @@
 #include <ESP8266WiFi.h>
 #include <FS.h>
 #include <SparkFunBME280.h>
+#include <PCF8574.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 #define COMM_BAUD_RATE   115200
 

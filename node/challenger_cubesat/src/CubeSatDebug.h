@@ -1,14 +1,14 @@
 // ====================================================================================================================
 // ====================================================================================================================
-// Copyright (c) 2017 Ryan Brock. All rights reserved.
+// Copyright (c) 2019 Ryan Brock. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // ====================================================================================================================
 // ====================================================================================================================
 
-#ifndef _WEATHER_DEBUG_H_
-#define _WEATHER_DEBUG_H_
+#ifndef _CUBESAT_DEBUG_H_
+#define _CUBESAT_DEBUG_H_
 
-#include "WeatherStationCommon.h"
+#include "CubeSatCommon.h"
 
 #define DEBUG_ENABLED_WAIT_TIME  3000
 #define DEFAULT_DEBUG_LEVEL      DEBUG_LEVEL_TRACE
@@ -19,11 +19,11 @@ enum DEBUG_LEVEL {
   DEBUG_LEVEL_ERROR = 100
 };
 
-class WeatherDebug
+class CubeSatDebug
 {
   public:
     static void init();
-    static WeatherDebug *getWeatherDebugger();
+    static CubeSatDebug *getCubeSatDebugger();
 
     void log(DEBUG_LEVEL level, String msg);
     void logln(DEBUG_LEVEL level, String msg);
@@ -33,12 +33,12 @@ class WeatherDebug
     static String getDebugLevelName(DEBUG_LEVEL level);
 
   private:
-    WeatherDebug();
-    WeatherDebug(bool debugEnabled, DEBUG_LEVEL debugLevel);
+    CubeSatDebug();
+    CubeSatDebug(bool debugEnabled, DEBUG_LEVEL debugLevel);
 
     bool                debugEnabled;
     DEBUG_LEVEL         debugLevel;
-    static WeatherDebug *debugger;
+    static CubeSatDebug *debugger;
     static bool         initialized;
 };
 
