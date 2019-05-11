@@ -24,21 +24,13 @@ private:
     CubeSatDebug          *debugger;
     CubeSatConfig         *config;
     CubeSatDisplayI       *cubeSatDisplay;
-    // WeatherStationI       *weatherStation;
-    // bool                  isAPModeEnabled;
-
-    // bool updateConfiguration(String &jsonConfig);
-    // void sendErrorResponse(WiFiClient &client, int status, String statusPhrase);
-    // void sendAPIAPStatus(WiFiClient &client);
-    // void sendAPIJsonResponse(WiFiClient &client, String &response);
-    // void sendAPIWeatherData(WiFiClient &client);
-    // void sendAPIConfiguration(WiFiClient &client);
-    // void sendFile(WiFiClient &client, String requestPath);
+    WiFiClient            client;
 
 public:
     CubeSatServer();
     void init(CubeSatConfig *config, CubeSatDisplayI *cubeSatDisplay);
-    void applicationLoop();
+    void sendDataToClient(String &dataToSend);
+    boolean dataFromClientAvailable(String *readBuffer);
 };
 
 

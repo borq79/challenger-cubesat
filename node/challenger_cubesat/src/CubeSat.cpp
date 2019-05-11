@@ -21,22 +21,7 @@ void CubeSat::pcf8574Interrupt() {
   if ((millis() - lastInterruptTime) > PCF8574_INT_DEBOUNCE_TIME) {
     lastInterruptTime = millis();
     this->debugger->logln(DEBUG_LEVEL_INFO, "PCF8574 Interrupt Fired");
-
-    // Record the curent values as the previous values
-    uint8_t currentPrimarySwitchState   = pcf8574->digitalRead(P1);
-    uint8_t currentSecondarySwitchState = pcf8574->digitalRead(P0);
-
-    if (this->dataSample.primarySwitchState != currentPrimarySwitchState) {
-      this->dataSample.previousPrimarySwitchState = this->dataSample.primarySwitchState;
-      this->dataSample.primarySwitchState         = currentPrimarySwitchState;
-    }
-
-    if (this->dataSample.secondarySwitchState != currentSecondarySwitchState) {
-      this->dataSample.previousSecondarySwitchState = this->dataSample.secondarySwitchState;
-      this->dataSample.secondarySwitchState         = currentSecondarySwitchState;
-    }
-
-    this->checkIfTheStateShouldChange();
+    interruptTriggered = true;
   }
 }
 
@@ -53,6 +38,11 @@ void CubeSat::begin(PCF8574 *pcf8574) {
 
   this->cubeSatDisplay->init(this->config);
 
+  this->initializeSensors();
+
+  // Setup the A0 pin (GPIO) to Input of the Primary Knob
+  pinMode(PRIMARY_KNOB_INPUT_PIN, INPUT);
+
   this->debugger->logln(DEBUG_LEVEL_INFO, "=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~");
   this->debugger->logln(DEBUG_LEVEL_INFO, "                                Challenger CubeSat ");
   this->debugger->logln(DEBUG_LEVEL_INFO, "=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~");
@@ -61,24 +51,38 @@ void CubeSat::begin(PCF8574 *pcf8574) {
   this->wsWifi.enableAP(config);
   this->server.init(&this->config, this->cubeSatDisplay);
 
-  this->initializeSensors();
+  // Read buffer from the client
+  readBuffer.reserve(350);
 }
 
 void CubeSat::applicationLoop() {
-  //this->server.applicationLoop();
-  // showLookingForSignal
-  if (cubeSatState == INITIAL_STATE) {
-    // this->cubeSatDisplay->showInitialState();
-  } else if (cubeSatState == SEARCHING_FOR_CLIENT) {
-    // this->cubeSatDisplay->showLookingForSignal();
+  if (didThePrimarySwitchGetToggled()) {
+    this->debugger->log(DEBUG_LEVEL_INFO, "Application loop notified of the primary switch being toggled to: ");
+    this->debugger->logln(DEBUG_LEVEL_INFO, String(this->dataSample.primarySwitchState));
   }
 
+  if (didTheSecondarySwitchGetToggled()) {
+    this->debugger->log(DEBUG_LEVEL_INFO, "Application loop notified of the secondary switch being toggled to: ");
+    this->debugger->logln(DEBUG_LEVEL_INFO, String(this->dataSample.secondarySwitchState));
+  }
+
+  if (didTheKnobGetTurned()) {
+    this->debugger->log(DEBUG_LEVEL_INFO, "Application loop notified of the knob being turned to: ");
+    this->debugger->logln(DEBUG_LEVEL_INFO, String(dataSample.primaryKnobValue));
+  }
+
+  if (didServerReceivedDataFromClient()) {
+    this->debugger->log(DEBUG_LEVEL_INFO, "Application loop notified of client data on wire: [");
+    this->debugger->log(DEBUG_LEVEL_INFO, readBuffer);
+    this->debugger->logln(DEBUG_LEVEL_INFO, "]");
+  }
+
+  setTheNewStateBasedOnInputs();
+  sendDataToClientBasedOnState();
+  cubeSatStateChanged = false;
 }
 
 void CubeSat::initializeSensors() {
-  // Setup the A0 pin (GPIO) to Input of the Primary Knob
-  pinMode(PRIMARY_KNOB_INPUT_PIN, INPUT);
-
   // Communication Mode Intialization
   bme280.settings.commInterface = BME_COMM_MODE;
   bme280.settings.I2CAddress = BME_ADDRESS;
@@ -100,7 +104,6 @@ void CubeSat::readSensors() {
   dataSample.tempF            = bme280.readTempF();
   dataSample.humidity         = bme280.readFloatHumidity();
   dataSample.pressure         = bme280.readFloatPressure() * PRESSURE_CONVERSION;
-  dataSample.primaryKnobValue = this->getLatestKnobValue();
 
   this->debugger->log(DEBUG_LEVEL_INFO, "Sensor Values\nT: "); this->debugger->log(DEBUG_LEVEL_INFO, String(dataSample.tempF, 2));
   this->debugger->log(DEBUG_LEVEL_INFO, "\tH: "); this->debugger->log(DEBUG_LEVEL_INFO, String(dataSample.humidity, 2));
@@ -126,6 +129,7 @@ boolean CubeSat::didTheKnobGetTurned() {
 
   if (abs(this->lastKnobValue - knobValue) > PRIMARY_KNOB_DELTA_THRESHOLD) {
       wasAChange = true;
+      this->lastKnobValue = knobValue;
   }
 
   return wasAChange;
@@ -145,10 +149,42 @@ uint16_t CubeSat::getLatestKnobValue() {
   uint16_t average = (rawValue1 + rawValue2 + rawValue3) / 3;
   //Serial.println(average);
 
+  dataSample.primaryKnobValue = average;
   return average;
 }
 
-void CubeSat::checkIfTheStateShouldChange() {
+boolean CubeSat::didThePrimarySwitchGetToggled() {
+  boolean switchToggled = false;
+
+  uint8_t currentPrimarySwitchState = pcf8574->digitalRead(P1);
+
+  if (this->dataSample.primarySwitchState != currentPrimarySwitchState) {
+    this->dataSample.previousPrimarySwitchState = this->dataSample.primarySwitchState;
+    this->dataSample.primarySwitchState         = currentPrimarySwitchState;
+    switchToggled                               = true;
+  }
+
+  return switchToggled;
+}
+
+boolean CubeSat::didTheSecondarySwitchGetToggled() {
+  boolean switchToggled = false;
+  uint8_t currentSecondarySwitchState = pcf8574->digitalRead(P0);
+
+  if (this->dataSample.secondarySwitchState != currentSecondarySwitchState) {
+    this->dataSample.previousSecondarySwitchState = this->dataSample.secondarySwitchState;
+    this->dataSample.secondarySwitchState         = currentSecondarySwitchState;
+    switchToggled                                 = true;
+  }
+
+  return switchToggled;
+}
+
+boolean CubeSat::didServerReceivedDataFromClient() {
+  return this->server.dataFromClientAvailable(&readBuffer);
+}
+
+void CubeSat::setTheNewStateBasedOnInputs() {
   this->debugger->log(DEBUG_LEVEL_TRACE, "Current State: "); this->debugger->logln(DEBUG_LEVEL_TRACE, String(cubeSatState));
   if (cubeSatState == INITIAL_STATE) {
     if (this->dataSample.previousPrimarySwitchState == LOW && this->dataSample.primarySwitchState == HIGH) {
@@ -157,4 +193,10 @@ void CubeSat::checkIfTheStateShouldChange() {
     }
   }
   this->debugger->log(DEBUG_LEVEL_TRACE, "New State: "); this->debugger->logln(DEBUG_LEVEL_TRACE, String(cubeSatState));
+}
+
+void CubeSat::sendDataToClientBasedOnState() {
+  if (cubeSatStateChanged) {
+    server.sendDataToClient("DORF:" + String(cubeSatState));
+  }
 }

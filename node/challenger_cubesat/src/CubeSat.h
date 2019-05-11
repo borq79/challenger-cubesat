@@ -42,7 +42,7 @@ class CubeSat {
     void pcf8574Interrupt();
     const CubeSatData& getCubeSatData();
     CubeSatConfig& getCubeSatConfig();
-    CUBESAT_STATE cubeSatState;
+
 
   private:
     CubeSatConfig     config;
@@ -54,14 +54,22 @@ class CubeSat {
     CubeSatDisplayI  *cubeSatDisplay;
     PCF8574          *pcf8574;
     uint16_t          lastKnobValue;
-    int               lastInterruptTime = 0;
+    int               lastInterruptTime  = 0;
+    boolean           interruptTriggered = false;
+    String            readBuffer;
+    CUBESAT_STATE     cubeSatState;
+    boolean           cubeSatStateChanged = false;
 
     void      loadConfigurationFile();
     void      initializeSensors();
     boolean   didTheKnobGetTurned();
     uint16_t  getLatestKnobValue();
     void      readSensors();
-    void      checkIfTheStateShouldChange();
+    void      setTheNewStateBasedOnInputs();
+    void      sendDataToClientBasedOnState();
+    boolean   didServerReceivedDataFromClient();
+    boolean   didThePrimarySwitchGetToggled();
+    boolean   didTheSecondarySwitchGetToggled();
 };
 
 
