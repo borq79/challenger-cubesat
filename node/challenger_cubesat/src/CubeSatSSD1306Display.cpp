@@ -77,6 +77,10 @@ void CubeSatSSD1306Display::showRebooting() {
   this->showSingleLineText("Rebooting");
 }
 
+void CubeSatSSD1306Display::showNeedsFanAdjustment() {
+  this->showSingleLineText("TOO HOT!");
+}
+
 void CubeSatSSD1306Display::initDisplay() {
   delay(200);
 

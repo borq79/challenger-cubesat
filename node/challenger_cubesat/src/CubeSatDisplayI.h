@@ -22,6 +22,7 @@ class CubeSatDisplayI {
     virtual void showInternalSystemStatus(CubeSatData &cubesatData) = 0;
     virtual void showWaitingForFirmware() = 0;
     virtual void showRebooting() = 0;
+    virtual void showNeedsFanAdjustment() = 0;
     virtual void showDownloadingFirmware(uint8_t progress) = 0;
 };
 

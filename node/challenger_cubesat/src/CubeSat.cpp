@@ -138,7 +138,7 @@ void CubeSat::readSensors() {
     this->debugger->log(DEBUG_LEVEL_INFO, "\tH: "); this->debugger->log(DEBUG_LEVEL_INFO, String(dataSample.humidity, 2));
     this->debugger->log(DEBUG_LEVEL_INFO, "\tP: "); this->debugger->log(DEBUG_LEVEL_INFO, String(dataSample.pressure, 2));
     this->debugger->log(DEBUG_LEVEL_INFO, "\n");
-      
+
     cubeSatDisplay->showInternalSystemStatus(dataSample);
   }
 }
@@ -215,6 +215,7 @@ void CubeSat::setTheNewStateBasedOnInputs() {
     case DOWNLOADING_FIRMWARE: cubeSatState = downloadingFirmware(); break;
     case REBOOT_NEW_FIRMWARE:  cubeSatState = rebootWithNewFirmware(); break;
     case DISPLAY_METRICS:      cubeSatState = displayMetrics(); break;
+    case NEEDS_FAN_ADJUST:     cubeSatState = needsFanAdjustment(); break;
     default: break;
   }
 
@@ -229,7 +230,7 @@ CUBESAT_STATE CubeSat::stateInitial() {
   if (this->currentValueSwitch0 == POSITION_ONE && this->currentValueSwitch1 == OFF){
     newState = SEARCHING_FOR_CLIENT;
     this->cubeSatDisplay->showLookingForSignal(this->currentValueKnob0 / 10);
-    server.sendDataToClient(messages[newState]);
+    // server.sendDataToClient(messages[newState]);
   }
 
   return newState;
@@ -245,7 +246,7 @@ CUBESAT_STATE CubeSat::stateNeedsInit() {
     this->cubeSatDisplay->showNeedsInitialization();
   }
 
-  server.sendDataToClient(messages[newState]);
+  // server.sendDataToClient(messages[newState]);
   return newState;
 }
 
@@ -287,8 +288,30 @@ CUBESAT_STATE CubeSat::rebootWithNewFirmware() {
 }
 
 CUBESAT_STATE CubeSat::displayMetrics() {
-  readSensors();
-  return DISPLAY_METRICS;
+  CUBESAT_STATE newState = DISPLAY_METRICS; // Stay the same by default
+  if (readBuffer.startsWith("TOO HOT")) {
+    newState = NEEDS_FAN_ADJUST;
+  } else {
+    readSensors();
+  }
+
+  return newState;
+}
+
+CUBESAT_STATE CubeSat::needsFanAdjustment() {
+  CUBESAT_STATE newState = NEEDS_FAN_ADJUST; // Stay the same by default
+
+  if (this->currentValueSwitch0 == POSITION_TWO &&
+      this->currentValueSwitch0 == POSITION_ONE) {
+    newState = DISPLAY_METRICS;
+    readSensors();
+  } else {
+    this->cubeSatDisplay->showNeedsFanAdjustment();
+    String messageToSendToClient = "TOO HOT";
+    server.sendDataToClient(messageToSendToClient);
+  }
+
+  return newState;
 }
 
 CUBESAT_STATE CubeSat::stateSearchingForClient() {

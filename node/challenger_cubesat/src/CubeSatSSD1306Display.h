@@ -41,6 +41,7 @@ public:
   void showLookingForSignal(int strength);
   void showWaitingForFirmware();
   void showRebooting();
+  void showNeedsFanAdjustment();
   void showDownloadingFirmware(uint8_t progress);
 };
 

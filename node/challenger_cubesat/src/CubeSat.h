@@ -109,6 +109,7 @@ class CubeSat {
     CUBESAT_STATE downloadingFirmware();
     CUBESAT_STATE rebootWithNewFirmware();
     CUBESAT_STATE displayMetrics();
+    CUBESAT_STATE needsFanAdjustment();
     CUBESAT_SWITCH_POSITION getSwitchPosition(uint8_t basePin);
 };
 
