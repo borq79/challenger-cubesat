@@ -16,6 +16,21 @@ void CubeSatSSD1306Display::init(CubeSatConfig &config) {
   this->showInitialState();
 }
 
+void CubeSatSSD1306Display::showSingleLineText(const char *text) {
+  this->display->clearDisplay();
+
+  this->display->setTextSize(1);
+  this->display->setTextColor(WHITE);
+  this->display->setCursor(0,0);
+  this->display->print(this->cubeSatName.c_str());
+
+  this->display->setTextSize(2);
+  this->display->setCursor(0, 25);
+  this->display->println(text);
+
+  this->display->display();
+}
+
 void CubeSatSSD1306Display::showInternalSystemStatus(CubeSatData &cubeSatData) {
   this->display->clearDisplay();
 
@@ -28,44 +43,38 @@ void CubeSatSSD1306Display::showInternalSystemStatus(CubeSatData &cubeSatData) {
   this->display->print("Temp       : "); this->display->println(cubeSatData.tempF);
   this->display->print("Humidity   : "); this->display->print(cubeSatData.humidity); this->display->println("%");
   this->display->print("Pressure   : "); this->display->println(cubeSatData.pressure);
-  this->display->print("Pri. Knob  : "); this->display->println(cubeSatData.primaryKnobValue);
 
   this->display->display();
 }
 
 void CubeSatSSD1306Display::showInitialState(){
-  this->display->clearDisplay();
-
-  this->display->setTextSize(1);
-  this->display->setTextColor(WHITE);
-  this->display->setCursor(0,0);
-  this->display->print(this->cubeSatName.c_str());
-
-  this->display->setTextSize(2);
-  this->display->setCursor(0, 25);
-  this->display->println("No Signal");
-
-  this->display->display();
+  this->showSingleLineText("No Signal");
 }
 
-void CubeSatSSD1306Display::showAcceptFirmwareState() {
-
+void CubeSatSSD1306Display::showWaitingForFirmware() {
+  this->showSingleLineText("Signal\nAcquired");
+  delay(3000);
+  this->showSingleLineText("Waiting\nfor FW");
 }
 
-void CubeSatSSD1306Display::showLookingForSignal() {
-  this->display->clearDisplay();
+void CubeSatSSD1306Display::showNeedsInitialization() {
+  this->showSingleLineText("Init");
+}
 
-  this->display->setTextSize(1);
-  this->display->setTextColor(WHITE);
-  this->display->setCursor(0,0);
-  this->display->print(this->cubeSatName.c_str());
+void CubeSatSSD1306Display::showLookingForSignal(int strength) {
+  String signalMsg = String("Sig: ") + String(strength) + String(" %");
+  Serial.println(signalMsg);
+  this->showSingleLineText(signalMsg.c_str());
+}
 
-  this->display->setTextSize(2);
-  this->display->setCursor(0, 25);
-  this->display->println("Searching");
-  this->display->println("for Signal");
+void CubeSatSSD1306Display::showDownloadingFirmware(uint8_t progress) {
+  String msg = String(progress) + String(" %");
+  Serial.println(msg);
+  this->showSingleLineText(msg.c_str());
+}
 
-  this->display->display();
+void CubeSatSSD1306Display::showRebooting() {
+  this->showSingleLineText("Rebooting");
 }
 
 void CubeSatSSD1306Display::initDisplay() {

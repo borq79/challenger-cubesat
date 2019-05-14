@@ -17,9 +17,12 @@ class CubeSatDisplayI {
   public:
     virtual void init(CubeSatConfig &config) = 0;
     virtual void showInitialState() = 0;
-    virtual void showLookingForSignal() = 0;
-    virtual void showAcceptFirmwareState() = 0;
+    virtual void showNeedsInitialization() = 0;
+    virtual void showLookingForSignal(int strength) = 0;
     virtual void showInternalSystemStatus(CubeSatData &cubesatData) = 0;
+    virtual void showWaitingForFirmware() = 0;
+    virtual void showRebooting() = 0;
+    virtual void showDownloadingFirmware(uint8_t progress) = 0;
 };
 
 #endif

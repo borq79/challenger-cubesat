@@ -24,13 +24,40 @@
 #define PRIMARY_KNOB_DELTA_THRESHOLD  20
 #define PRIMARY_KNOB_MAX              1024
 #define PRIMARY_KNOB_MIN              0
+#define PRIMARY_KNOB_OFF_THRESHOLD    50
+#define SWITCH0_BASE_PIN              0
+#define SWITCH1_BASE_PIN              2
 #define SENSOR_SAMPLE_RATE            (1000)
 #define PRESSURE_CONVERSION           0.000295299830714 /* merc: 0.000295299830714 / psi: 0.000145037738*/
 
 enum CUBESAT_STATE {
-  INITIAL_STATE,
-  SEARCHING_FOR_CLIENT
+  NEEDS_INITIALIZATION    = 0,
+  INITIAL_STATE           = 1,
+  SEARCHING_FOR_CLIENT    = 2,
+  WAITING_FOR_FIRMWARE    = 3,
+  DOWNLOADING_FIRMWARE    = 4,
+  REBOOT_NEW_FIRMWARE     = 5,
+  DISPLAY_METRICS         = 6,
+  NEEDS_FAN_ADJUST        = 7
 };
+
+enum CUBESAT_SWITCH_POSITION {
+  OFF          = 0,
+  POSITION_ONE = 1,
+  POSITION_TWO = 2
+};
+
+static String messages[] = {
+  "NO SIGNAL",
+  "NEEDS INIT",
+  "SEARCHING FOR CLIENT",
+  "WAITING FOR FIRMWARE",
+  "DOWNLOADING FIRMWARE",
+  "REBOOTING",
+  "DISPLAY METRICS",
+  "NEEDS_FAN_ADJUST"
+};
+
 
 class CubeSat {
 
@@ -53,7 +80,12 @@ class CubeSat {
     CubeSatServer     server;
     CubeSatDisplayI  *cubeSatDisplay;
     PCF8574          *pcf8574;
-    uint16_t          lastKnobValue;
+    uint16_t          previousValueKnob0;
+    uint16_t          currentValueKnob0;
+    CUBESAT_SWITCH_POSITION currentValueSwitch0;
+    CUBESAT_SWITCH_POSITION currentValueSwitch1;
+    CUBESAT_SWITCH_POSITION previousValueSwitch0;
+    CUBESAT_SWITCH_POSITION previousValueSwitch1;
     int               lastInterruptTime  = 0;
     boolean           interruptTriggered = false;
     String            readBuffer;
@@ -68,8 +100,16 @@ class CubeSat {
     void      setTheNewStateBasedOnInputs();
     void      sendDataToClientBasedOnState();
     boolean   didServerReceivedDataFromClient();
-    boolean   didThePrimarySwitchGetToggled();
-    boolean   didTheSecondarySwitchGetToggled();
+    boolean   didSwitchGetToggled(CUBESAT_SWITCH_POSITION &currentPosition, CUBESAT_SWITCH_POSITION &previousPosition, uint8_t basePin);
+    boolean   isInInitialState();
+    CUBESAT_STATE stateInitial();
+    CUBESAT_STATE stateNeedsInit();
+    CUBESAT_STATE stateSearchingForClient();
+    CUBESAT_STATE waitingForFirmware();
+    CUBESAT_STATE downloadingFirmware();
+    CUBESAT_STATE rebootWithNewFirmware();
+    CUBESAT_STATE displayMetrics();
+    CUBESAT_SWITCH_POSITION getSwitchPosition(uint8_t basePin);
 };
 
 

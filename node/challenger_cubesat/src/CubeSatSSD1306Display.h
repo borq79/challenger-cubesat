@@ -29,6 +29,7 @@ private:
   Adafruit_SSD1306 *display;
 
   void initDisplay();
+  void showSingleLineText(const char *text);
 
 
 public:
@@ -36,8 +37,11 @@ public:
   void init(CubeSatConfig &config);
   void showInternalSystemStatus(CubeSatData &cubeSatData);
   void showInitialState();
-  void showLookingForSignal();
-  void showAcceptFirmwareState();
+  void showNeedsInitialization();
+  void showLookingForSignal(int strength);
+  void showWaitingForFirmware();
+  void showRebooting();
+  void showDownloadingFirmware(uint8_t progress);
 };
 
 #endif
